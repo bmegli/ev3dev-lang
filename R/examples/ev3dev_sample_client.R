@@ -1,6 +1,8 @@
 #   Sample application for EV3 (client).
 #
-#   It transfers the necessary files to EV3, starts Rserve on EV3, sources the files
+#   Note - script has not been tested yet after transfering to new RSclient syntax
+#
+#   It transfers the necessary files to EV3, sources the files
 #   With the correctly built EV3 robot this application controls the robot so that:
 #   -it looks around with infrared sensor (360 degree on medium motor with polling the infrared)
 #   -the result is plotted on PC
@@ -12,9 +14,6 @@
 #   -R and Rserve installed on EV3
 #   -RSclient package installed on PC
 #   -remote connections enabled for Rserve on EV3
-#   -ssh client installed on PC and in the system path (e.g. www.openssh.org/ for Windows)
-#   -ssh keys for user of PC stored on EV3, same PC/EV3 user (doesn't ask for password)
-#   -ssh connected at least once from command line (so machine trusted)
 #   -working directory set to location of files (setwd on PC)
 #
 #   This is intented to work in tandem with ev3dev_sample.R 
@@ -45,9 +44,9 @@
 
 # Setup the ip of EV3
 
-#ip="192.168.1.10"
-ip="10.1.6.163"
-ip="192.168.1.3"
+ip="192.168.1.10"
+#ip="10.1.6.163"
+#ip="192.168.1.3"
 
 # Set working directory to source file location:
 # e.g. in RStudio Session->Set Working Directory -> To Source File Location
@@ -57,30 +56,24 @@ ip="192.168.1.3"
 library(RSclient)
 source("ev3_dev_tools.R") #startRemoteRserve, upload, run
 
-scp_path=paste(ip, ":~/R/", sep="")
-
-status=run(ip, "mkdir ~/R") #may warn if directory already exists
-
-startRemoteRserve(ip) 
-Sys.sleep(15) # let's wait for the server start
 c=RSconnect(ip)
-RSeval(c, quote(print("It is ready.")))
+RS.eval(c, quote(print("It is ready.")))
 
-upload("ev3dev.R", scp_path)
-upload("ev3dev_sample.R", scp_path)
-RSeval( c, quote(source("~/R/ev3dev.R") ))
-RSeval( c, quote(source("~/R/ev3dev_sample.R") ))
+UploadFile(c, "./ev3dev.R")
+UploadFile(c, "ev3dev_sample.R")
+RS.eval( c, source("ev3dev.R"))
+RS.eval( c, source("ev3dev_sample.R") )
 
 # END Setup
 
 # Send some sample commands
-RSeval( c, quote(Speak("Hello") )
+RS.eval( c, Speak("Hello") )
 
-RSeval( c, quote(Drive(left_motor, right_motor, 50)) )
-RSeval( c, quote(Look(head_motor, -90)) )
-RSeval( c, quote(Look(head_motor, 0)) )
-RSeval( c, quote(Sense(infrared)))
-RSeval( c, quote(Rotate(left_motor, right_motor, 90)) )
+RS.eval( c, Drive(left_motor, right_motor, 50) ) 
+RS.eval( c, Look(head_motor, -90)) 
+RS.eval( c, Look(head_motor, 0)) 
+RS.eval( c, Sense(infrared))
+RS.eval( c, Rotate(left_motor, right_motor, 90)) 
 
 Degree=function(radian){ radian*180/pi }
 Radian=function(degree){ degree*pi/180 }
@@ -117,16 +110,15 @@ X11()
 
 while(1)
 {
-  readings=RSeval( c, quote(LookAround(head_motor, infrared)))
+  readings=RS.eval( c, LookAround(head_motor, infrared))
 
   PlotReadings(readings)
   command=ControlRobot()
   
   rotation_command=paste("Rotate(left_motor, right_motor,", command$rotate, ")" ,sep="")  
-  RSeval( c, rotation_command)
+  RS.eval( c, rotation_command, lazy=FALSE)
   drive_command=paste("Drive(left_motor, right_motor,", command$drive, ")" ,sep="")  
-  RSeval( c, drive_command)
+  RS.eval( c, drive_command, lazy=FALSE)
 }
 
-
-RSclose(c)
+RS.close(c)
