@@ -54,9 +54,9 @@ ip="192.168.1.10"
 # End Setup
 
 library(RSclient)
-source("ev3_dev_tools.R") #startRemoteRserve, upload, run
+source("../ev3_dev_tools.R") #startRemoteRserve, upload, run
 
-c=RSconnect(ip)
+c=RS.connect(ip)
 RS.eval(c, quote(print("It is ready.")))
 
 UploadFile(c, "./ev3dev.R")
@@ -70,8 +70,12 @@ RS.eval( c, source("ev3dev_sample.R") )
 RS.eval( c, Speak("Hello") )
 
 RS.eval( c, Drive(left_motor, right_motor, 50) ) 
-RS.eval( c, Look(head_motor, -90)) 
+
+
+
+RS.eval( c, Look(head_motor, -360)) 
 RS.eval( c, Look(head_motor, 0)) 
+RS.eval( c, Look(head_motor, 360)) 
 RS.eval( c, Sense(infrared))
 RS.eval( c, Rotate(left_motor, right_motor, 90)) 
 
@@ -86,13 +90,29 @@ PlotReadings=function(readings)
   y= 100*sin(seq(from=0, to=2*pi, by=0.05))
   lines(x,y, col="red")    
   
-  readings=readings[readings[,2]<90,]
-  x=-readings[,2]*cos(Radian(90+readings[,1]))
+  readings=readings[readings[,2]<100,]
+  x= readings[,2]*cos(Radian(90+readings[,1]))
   y= readings[,2]*sin(Radian(90+readings[,1]))
-
   
   points(x, y, col="blue")    
 }
+
+PlotReadingsUS=function(readings)
+{
+  plot(0,0, xlim=c(-300, 300), ylim=c(-300,300), asp=1, col="red")
+  
+  x= 255*cos(seq(from=0, to=2*pi, by=0.05))
+  y= 255*sin(seq(from=0, to=2*pi, by=0.05))
+  lines(x,y, col="red")    
+  
+  readings[,2]=readings[,2]/10
+  readings=readings[readings[,2]<250,]
+  x= readings[,2]*cos(Radian(90+readings[,1]))
+  y= readings[,2]*sin(Radian(90+readings[,1]))
+  
+  points(x, y, col="blue")    
+}
+
 
 ControlRobot=function()
 {
@@ -113,12 +133,13 @@ while(1)
   readings=RS.eval( c, LookAround(head_motor, infrared))
 
   PlotReadings(readings)
+  #PlotReadingsUS(readings)
   command=ControlRobot()
   
   rotation_command=paste("Rotate(left_motor, right_motor,", command$rotate, ")" ,sep="")  
-  RS.eval( c, rotation_command, lazy=FALSE)
+  RS.eval( c, as.call(list(quote(Rotate), quote(left_motor), quote(right_motor), command$rotate)), lazy=FALSE)  
   drive_command=paste("Drive(left_motor, right_motor,", command$drive, ")" ,sep="")  
-  RS.eval( c, drive_command, lazy=FALSE)
+  RS.eval( c, as.call(list(quote(Drive), quote(left_motor), quote(right_motor), command$drive)), lazy=FALSE)
 }
 
 RS.close(c)

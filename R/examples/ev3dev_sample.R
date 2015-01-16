@@ -33,6 +33,7 @@ left_motor=large.motor(ports$OUTPUT_B )
 right_motor=large.motor(ports$OUTPUT_C ) 
 head_motor=medium.motor(ports$OUTPUT_AUTO)
 infrared=infrared.sensor(ports$INPUT_AUTO)
+#infrared=ultrasonic.sensor(ports$INPUT_AUTO)
 
 if(!Connected(left_motor) || !Connected(right_motor))
   stop("Large motors on OUTPUT_B and OUTPUT_C are mandatory")
@@ -70,8 +71,8 @@ InitDriveMotor(left_motor)
 InitDriveMotor(right_motor)
 InitHeadMotor(head_motor)
 
-DegreeToHeadPosition=function(deg) {as.integer(deg * 300 / 180)}
-PositionToHeadDegree=function(pos){ pos * 180 / 300}
+DegreeToHeadPosition=function(deg) {as.integer(deg * 3)}
+PositionToHeadDegree=function(pos){ pos / 3 }
 CMToDrivePosition=function(cm) {as.integer(cm*100*5/12)}
 DegreeToDrivePosition=function(degree){ as.integer(-degree * 520 / 90) }
 
